@@ -66,9 +66,52 @@ class RequestViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['POST'], authentication_classes=[BasicAuthentication],
             permission_classes=[IsAuthenticated])
     def register(self, request, *args, **kwargs):
-        # поиск уже имеющихся добавить
+        # поиск уже имеющихся
+        try:
+            FriendRequest.objects.filter(from_id=request.user).filter(to_id=User.objects.get(id=request.POST['id'])).filter(is_active=True).last()
+        except:
+            return Response({'registered': False})
+        # проверка на встречный реквест
+        try:
+            object = FriendRequest.objects.filter(to_id=request.user).filter(from_id=User.objects.get(id=request.POST['id'])).filter(is_active=True).last()
+            object.is_active = False
+            FriendRequest(is_active=False, from_id_id=request.POST['id'], to_id=request.user).save()
+            Friends(is_active=True, from_id_id=request.POST['id'], to_id_id=request.user).save()
+            Friends(is_active=True, from_id_id=request.user, to_id_id=request.POST['id']).save()
+            return Response({'registered': True})
+        except:
+            pass
+
         FriendRequest.objects.create(from_id=request.user, to_id=User.objects.get(id=request.POST['id'])).save()
         return Response({'registered': True})
+
+    @action(detail=False, methods=['POST'], authentication_classes=[BasicAuthentication],
+            permission_classes=[IsAuthenticated])
+    def decline(self, request, *args, **kwargs):
+        # print(args, kwargs)
+        try:
+            object = FriendRequest.objects.filter(from_id=request.POST['id']).filter(to_id=request.user).filter(
+                is_active=True).first()
+            object.is_active = False
+            object.save()
+        except:
+            return Response({'completed': False})
+        return Response({'completed': True})
+
+    @action(detail=False, methods=['POST'], authentication_classes=[BasicAuthentication],
+            permission_classes=[IsAuthenticated])
+    def accept(self, request, *args, **kwargs):
+        # print(args, kwargs)
+        try:
+            object = FriendRequest.objects.filter(from_id=request.POST['id']).filter(to_id=request.user).filter(
+                is_active=True).first()
+            object.is_active = False
+            object.save()
+        except:
+            return Response({'completed': False})
+        Friends(is_active=True, from_id_id=request.POST['id'], to_id_id=request.user).save()
+        Friends(is_active=True, from_id_id=request.user, to_id_id=request.POST['id']).save()
+        return Response({'completed': True})
 
 
 class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -93,12 +136,39 @@ class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
     def delete(self, request, *args, **kwargs):
         # print(args, kwargs)
         try:
-            object = Friends.objects.filter(from_id=request.user).filter(to_id=request.POST['id']).filter(is_active=True).first()
+            object = Friends.objects.filter(from_id=request.user).filter(to_id=request.POST['id']).filter(
+                is_active=True).first()
             object.is_active = False
             object.save()
-            object = Friends.objects.filter(from_id=request.POST['id']).filter(to_id=request.user).filter(is_active=True).first()
+            object = Friends.objects.filter(from_id=request.POST['id']).filter(to_id=request.user).filter(
+                is_active=True).first()
             object.is_active = False
             object.save()
         except:
             return Response({'completed': False})
         return Response({'completed': True})
+
+    @action(detail=False, methods=['POST'], authentication_classes=[BasicAuthentication],
+            permission_classes=[IsAuthenticated])
+    def check(self, request, *args, **kwargs):
+        # print(args, kwargs)
+        try:
+            object = Friends.objects.get(from_id=request.user).filter(to_id=request.POST['id']).get(
+                is_active=True).first()
+            return Response({'status': 'friend'})
+        except:
+            pass
+        try:
+            object = FriendRequest.objects.filter(from_id=request.user).filter(to_id=request.POST['id']).get(
+                is_active=True).first()
+            return Response({'status': 'outcoming request'})
+        except:
+            pass
+        try:
+            object = FriendRequest.objects.filter(to_id=request.user).filter(from_id=request.POST['id']).get(
+                is_active=True).first()
+            return Response({'status': 'incoming request'})
+        except:
+            pass
+        return Response({'status': 'nothing'})
+
