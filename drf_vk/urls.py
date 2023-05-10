@@ -15,10 +15,10 @@ router.register(r'friends', views.FriendsViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    re_path(r'^openapi-schema', get_schema_view(
-        title="drf_vk",  # Title of your app
-        description="test api",  # Description of your app
-        version="1.0.0",
-        public=True,
-    ), name='openapi-schema'),
+    # re_path(r'^openapi-schema', get_schema_view(
+    #     title="drf_vk",  # Title of your app
+    #     description="test api",  # Description of your app
+    #     version="1.0.0",
+    #     public=True,
+    # ), name='openapi-schema'),
 ]
